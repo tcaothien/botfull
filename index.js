@@ -232,33 +232,29 @@ client.on("messageCreate", async (message) => {
             break;
         }
         case "epmarry": {
-            const user = await findOrCreateUser(message.author.id, message.author.username);
-            if (!user.isMarried) return message.reply("Bạn chưa kết hôn!");
-            
-            const spouse = await client.users.fetch(user.spouseId);
-            const marriageEmbed = new EmbedBuilder()
-                .setColor("Pink")
-                .setTitle("💍 Thông tin hôn nhân")
-                .addFields(
-                    { name: "Tên chồng/vợ", value: spouse.tag },
-                    { name: "Ngày kết hôn", value: user.marriageDate.toLocaleDateString() },
-                    { name: "Điểm yêu thương", value: `${user.lovePoints}` },
-                    { name: "Ảnh kết hôn", value: user.marriageImages.join(", ") || "Chưa có ảnh kết hôn" }
-                );
-            message.reply({ embeds: [marriageEmbed] });
-            break;
-        }
-        case "eaddimage": {
-            const user = await findOrCreateUser(message.author.id, message.author.username);
-            if (!user.isMarried) return message.reply("Bạn chưa kết hôn!");
+    const user = await findOrCreateUser(message.author.id, message.author.username);
+    if (!user.isMarried) return message.reply("Bạn chưa kết hôn!");
 
-            const image = args.join(" ");
-            if (!image) return message.reply("Bạn cần cung cấp một URL ảnh.");
-            user.marriageImages.push(image);
-            await user.save();
-            message.reply(`Ảnh kết hôn của bạn đã được thêm: ${image}`);
-            break;
-        }
+    const spouse = await client.users.fetch(user.spouseId);
+    const marriageEmbed = new EmbedBuilder()
+        .setColor("Pink")
+        .setTitle("💍 Thông tin hôn nhân")
+        .addFields(
+            { name: "Tên chồng/vợ", value: spouse.tag },
+            { name: "Ngày kết hôn", value: user.marriageDate.toLocaleDateString() },
+            { name: "Điểm yêu thương", value: `${user.lovePoints}` },
+        );
+
+    // Chỉ thêm ảnh kết hôn nếu người dùng có ảnh
+    if (user.marriageImages.length > 0) {
+        marriageEmbed.setImage(user.marriageImages[0]);
+    }
+
+    marriageEmbed.setFooter({ text: "Hãy giữ yêu thương trọn vẹn!" });
+
+    message.reply({ embeds: [marriageEmbed] });
+    break;
+}
         case "edelimage": {
             const user = await findOrCreateUser(message.author.id, message.author.username);
             if (!user.isMarried) return message.reply("Bạn chưa kết hôn!");
