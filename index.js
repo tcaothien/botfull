@@ -497,7 +497,7 @@ client.on("messageCreate", async (message) => {
                 .setColor("Red")
                 .setTitle("📚 Danh sách lệnh bot")
                 .setDescription(`
-                **eexu** - Kiểm tra số dư xu của bạn.
+                **exu** - Kiểm tra số dư xu của bạn.
                 **etx <số_xu> <tai/xiu>** - Chơi tài xỉu.
                 **edaily** - Nhận xu hàng ngày.
                 **egivexu @user <số_xu>** - Chuyển xu cho người khác.
@@ -506,8 +506,10 @@ client.on("messageCreate", async (message) => {
                 **epmarry** - Xem thông tin kết hôn.
                 **eaddimage <URL ảnh>** - Thêm ảnh vào bộ sưu tập kết hôn.
                 **edelimage <URL ảnh>** - Xóa ảnh khỏi bộ sưu tập kết hôn.
+                **eshop** - Hiển thị các loại nhẫn có thể mua
                 **ebuy <mã nhẫn>** - Mua nhẫn để cầu hôn.
-                **egift @user <mã nhẫn>** - Tặng nhẫn cho người khác.
+                **einv** - Kiểm tra kho nhẫn của bạn
+                **egift @user <tên_nhẫn>** - Tặng nhẫn cho người khác.
                 **eaddreply <từ_khóa> <nội_dung_trả_lời>** - Thêm trả lời tự động cho từ khóa.
                 **edelreply <từ_khóa>** - Xóa trả lời tự động cho từ khóa.
                 **elistreply** - Liệt kê các từ khóa và trả lời tự động.
