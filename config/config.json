@@ -1,0 +1,6 @@
+{
+  "prefix": "e",
+  "token": "YOUR_BOT_TOKEN", 
+  "mongoURI": "mongodb://localhost:27017/yourdb",
+  "adminID": "1262464227348582492"  # ID của người dùng admin, có quyền quản lý xu và reset bot
+}
