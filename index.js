@@ -5,14 +5,9 @@ const mongoose = require("mongoose");
 mongoose.set('strictQuery', true);  // Hoặc false nếu bạn muốn truy vấn không nghiêm ngặt
 
 // Kết nối MongoDB
-mongoose.connect("MONGODB_CONNECTION_STRING", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-}).then(() => {
-    console.log("Kết nối MongoDB thành công!");
-}).catch((error) => {
-    console.error("Lỗi kết nối MongoDB:", error);
-});
+mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log("Đã kết nối MongoDB"))
+  .catch(err => console.log(err));
 
 // Schema người dùng
 const userSchema = new mongoose.Schema({
@@ -533,4 +528,4 @@ client.on("messageCreate", async (message) => {
 });
 
 // Đăng nhập vào Discord
-client.login("YOUR_BOT_TOKEN");
+client.login(process.env.TOKEN);
