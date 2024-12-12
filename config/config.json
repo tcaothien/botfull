@@ -1,6 +1,6 @@
 {
   "prefix": "e",
-  "token": "process.env.BOT_TOKEN", 
+  "token": "process.env.TOKEN", 
   "mongoURI": "process.env.MONGO_URI",
   "adminID": "1262464227348582492"
 }
