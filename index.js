@@ -52,7 +52,7 @@ client.on("messageCreate", async (message) => {
 
     // Các lệnh liên quan đến xu
     switch (command) {
-        case "exu": {
+        case "xu": {
             const user = await findOrCreateUser(message.author.id, message.author.username);
             const embed = new EmbedBuilder()
                 .setColor("Red")
@@ -61,7 +61,7 @@ client.on("messageCreate", async (message) => {
             message.reply({ embeds: [embed] });
             break;
         }
-        case "etx": {
+        case "tx": {
             if (args.length < 2) return message.reply("Cú pháp: `etx <số_xu> <tai/xiu>`.");
             const betAmount = parseInt(args[0]);
             const choice = args[1].toLowerCase();
@@ -99,7 +99,7 @@ client.on("messageCreate", async (message) => {
             message.reply({ embeds: [resultEmbed] });
             break;
         }
-        case "edaily": {
+        case "daily": {
             const user = await findOrCreateUser(message.author.id, message.author.username);
             const dailyAmount = Math.floor(Math.random() * 20000) + 1000; // Random từ 1,000 đến 20,000 xu
             user.balance += dailyAmount;
@@ -107,7 +107,7 @@ client.on("messageCreate", async (message) => {
             message.reply(`Bạn nhận được **${dailyAmount} xu** từ quà tặng hàng ngày!`);
             break;
         }
-        case "egivexu": {
+        case "givexu": {
             if (args.length < 2) return message.reply("Cú pháp: `egivexu @user <số_xu>`.");
             const mentionedUser = message.mentions.users.first();
             if (!mentionedUser) return message.reply("Hãy tag người dùng bạn muốn chuyển xu!");
@@ -129,7 +129,7 @@ client.on("messageCreate", async (message) => {
         }
 
         // Các lệnh kết hôn
-        case "emarry": {
+        case "marry": {
             const partner = message.mentions.users.first();
             if (!partner) return message.reply("Bạn cần tag người mà bạn muốn cầu hôn! Cú pháp: `emarry @user`.");
 
@@ -193,7 +193,7 @@ client.on("messageCreate", async (message) => {
             });
             break;
         }
-        case "edivorce": {
+        case "divorce": {
             const divorcer = await findOrCreateUser(message.author.id, message.author.username);
             if (!divorcer.isMarried) return message.reply("Bạn chưa kết hôn!");
 
@@ -242,7 +242,7 @@ client.on("messageCreate", async (message) => {
             });
             break;
         }
-        case "epmarry": {
+        case "pmarry": {
             const user = await findOrCreateUser(message.author.id, message.author.username);
 
             // Kiểm tra xem người dùng đã kết hôn hay chưa
@@ -278,7 +278,7 @@ client.on("messageCreate", async (message) => {
             message.reply({ embeds: [embed] });
             break;
         }
-        case "edelimage": {
+        case "delimage": {
             const user = await findOrCreateUser(message.author.id, message.author.username);
             if (!user.isMarried) return message.reply("Bạn chưa kết hôn!");
 
@@ -291,7 +291,7 @@ client.on("messageCreate", async (message) => {
             message.reply(`Ảnh kết hôn đã được xóa: ${image}`);
             break;
         }
-       case "eshop": {
+       case "shop": {
             const rings = [
                 { id: "01", name: "ENZ Peridot", price: 100000 },
                 { id: "02", name: "ENZ Citrin", price: 200000 },
@@ -319,41 +319,47 @@ client.on("messageCreate", async (message) => {
             return message.reply({ embeds: [shopEmbed] });
         }
 
-        case "ebuy": {
-            const rings = [
-                { id: "01", name: "ENZ Peridot", price: 100000 },
-                { id: "02", name: "ENZ Citrin", price: 200000 },
-                { id: "03", name: "ENZ Topaz", price: 500000 },
-                { id: "04", name: "ENZ Spinel", price: 1000000 },
-                { id: "05", name: "ENZ Aquamarine", price: 2500000 },
-                { id: "06", name: "ENZ Emerald", price: 5000000 },
-                { id: "07", name: "ENZ Ruby", price: 10000000 },
-                { id: "999", name: "ENZ Sapphire", price: 25000000 },
-            ];
+        case "buy": {
+    const rings = [
+        { id: "01", name: "ENZ Peridot", price: 100000 },
+        { id: "02", name: "ENZ Citrin", price: 200000 },
+        { id: "03", name: "ENZ Topaz", price: 500000 },
+        { id: "04", name: "ENZ Spinel", price: 1000000 },
+        { id: "05", name: "ENZ Aquamarine", price: 2500000 },
+        { id: "06", name: "ENZ Emerald", price: 5000000 },
+        { id: "07", name: "ENZ Ruby", price: 10000000 },
+        { id: "999", name: "ENZ Sapphire", price: 25000000 },
+    ];
 
-            const ringId = args[0];
-            if (!ringId) return message.reply("Cú pháp: `ebuy <mã nhẫn>`.");
+    const ringId = args[0];
+    if (!ringId) return message.reply("Cú pháp: `ebuy <mã nhẫn>`.");
 
-            const ring = rings.find((r) => r.id === ringId);
-            if (!ring) return message.reply("Mã nhẫn không hợp lệ!");
+    const ring = rings.find((r) => r.id === ringId);
+    if (!ring) return message.reply("Mã nhẫn không hợp lệ!");
 
-            const buyer = await findOrCreateUser(message.author.id, message.author.username);
-            if (buyer.balance < ring.price) {
-                return message.reply("Bạn không đủ xu để mua nhẫn này!");
-            }
+    const buyer = await findOrCreateUser(message.author.id, message.author.username);
+    if (buyer.balance < ring.price) {
+        return message.reply("Bạn không đủ xu để mua nhẫn này!");
+    }
 
-            buyer.balance -= ring.price;
+    buyer.balance -= ring.price;
 
-            if (!buyer.inventory) buyer.inventory = [];
-            buyer.inventory.push(ring.name);
+    if (!buyer.inventory) buyer.inventory = [];
+    buyer.inventory.push(ring.name);
 
-            await buyer.save();
+    console.log(buyer.inventory); // Kiểm tra kho trước khi lưu
 
-            message.reply(`💍 Bạn đã mua nhẫn **${ring.name}** thành công!`);
-            break;
-        }
+    try {
+        await buyer.save();
+        message.reply(`💍 Bạn đã mua nhẫn **${ring.name}** thành công!`);
+    } catch (err) {
+        console.error("Lỗi khi lưu người mua:", err);
+        message.reply("Đã xảy ra lỗi khi mua nhẫn. Vui lòng thử lại sau.");
+    }
 
-        case "einv": {
+    break;
+}
+        case "inv": {
             const user = await findOrCreateUser(message.author.id, message.author.username);
 
             if (!user.inventory || user.inventory.length === 0) {
@@ -371,7 +377,7 @@ client.on("messageCreate", async (message) => {
             message.reply({ embeds: [inventoryEmbed] });
             break;
         } 
-        case "egift": {
+        case "gift": {
             const recipient = message.mentions.users.first();
             const ringName = args.slice(1).join(" ");
 
@@ -421,7 +427,7 @@ client.on("messageCreate", async (message) => {
             message.reply({ embeds: [giftEmbed] });
             break;
         }
-        case "eaddreply": {
+        case "addreply": {
             if (message.author.id !== "1262464227348582492") return message.reply("Bạn không có quyền thực hiện lệnh này!");
 
             const keyword = args[0];
@@ -434,7 +440,7 @@ client.on("messageCreate", async (message) => {
             message.reply(`Đã thêm trả lời tự động cho từ khóa: **${keyword}**.`);
             break;
         }
-        case "edelreply": {
+        case "delreply": {
             if (message.author.id !== "1262464227348582492") return message.reply("Bạn không có quyền thực hiện lệnh này!");
 
             const keyword = args[0];
@@ -445,7 +451,7 @@ client.on("messageCreate", async (message) => {
             message.reply(`Đã xóa trả lời tự động cho từ khóa: **${keyword}**.`);
             break;
         }
-        case "elistreply": {
+        case "listreply": {
             if (message.author.id !== "1262464227348582492") return message.reply("Bạn không có quyền thực hiện lệnh này!");
 
             // Your code to list all automatic replies
@@ -453,7 +459,7 @@ client.on("messageCreate", async (message) => {
             message.reply("Danh sách trả lời tự động:");
             break;
         }
-        case "eaddxu": {
+        case "addxu": {
             if (message.author.id !== "1262464227348582492") return message.reply("Bạn không có quyền thực hiện lệnh này!");
 
             const mentionedUser = message.mentions.users.first();
@@ -467,7 +473,7 @@ client.on("messageCreate", async (message) => {
             message.reply(`Đã thêm **${amount} xu** cho ${mentionedUser.tag}.`);
             break;
         }
-        case "edelxu": {
+        case "delxu": {
             if (message.author.id !== "1262464227348582492") return message.reply("Bạn không có quyền thực hiện lệnh này!");
 
             const mentionedUser = message.mentions.users.first();
@@ -483,18 +489,18 @@ client.on("messageCreate", async (message) => {
             message.reply(`Đã trừ **${amount} xu** từ ${mentionedUser.tag}.`);
             break;
         }
-        case "eresetallbot": {
+        case "resetallbot": {
             if (message.author.id !== "1262464227348582492") return message.reply("Bạn không có quyền thực hiện lệnh này!");
 
             await User.deleteMany({});
             message.reply("Đã reset tất cả dữ liệu của bot.");
             break;
         }
-        case "etop": {
+        case "top": {
             // Your code to show leaderboard
             break;
         }
-        case "ehelps": {
+        case "helps": {
             const helpEmbed = new EmbedBuilder()
                 .setColor("Red")
                 .setTitle("📚 Danh sách lệnh bot")
