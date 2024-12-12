@@ -8,6 +8,10 @@ mongoose.set('strictQuery', true);  // Hoặc false nếu bạn muốn truy vấ
 mongoose.connect("MONGODB_CONNECTION_STRING", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+}).then(() => {
+    console.log("Kết nối MongoDB thành công!");
+}).catch((error) => {
+    console.error("Lỗi kết nối MongoDB:", error);
 });
 
 // Schema người dùng
