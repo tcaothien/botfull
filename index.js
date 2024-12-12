@@ -128,56 +128,65 @@ client.on("messageCreate", async (message) => {
 
         // Các lệnh kết hôn
         case "emarry": {
-            if (!message.mentions.users.size) return message.reply("Hãy tag người bạn muốn cầu hôn!");
             const partner = message.mentions.users.first();
+            if (!partner) return message.reply("Bạn cần tag người mà bạn muốn cầu hôn! Cú pháp: `emarry @user`.");
 
-            const proposer = await findOrCreateUser(message.author.id, message.author.username);
-            const receiver = await findOrCreateUser(partner.id, partner.username);
-
-            if (proposer.isMarried || receiver.isMarried) {
-                return message.reply("Một trong hai người đã kết hôn!");
+            if (partner.id === message.author.id) {
+                return message.reply("Bạn không thể tự kết hôn với chính mình!");
             }
 
-            if (!proposer.ring) {
-                return message.reply("Bạn cần mua nhẫn trước khi cầu hôn! Sử dụng lệnh `ebuy` để mua nhẫn.");
+            // Lấy dữ liệu người dùng và đối tượng
+            const user = await findOrCreateUser(message.author.id, message.author.username);
+            const partnerData = await findOrCreateUser(partner.id, partner.username);
+
+            // Kiểm tra xem cả hai đã kết hôn chưa
+            if (user.marriage || partnerData.marriage) {
+                return message.reply("Một trong hai người đã kết hôn! Không thể kết hôn thêm.");
             }
 
-            const confirmMessage = await message.channel.send(
-                `${partner}, bạn có đồng ý kết hôn với ${message.author} không? Trả lời bằng \`có\` hoặc \`không\`.`
-            );
+            // Kiểm tra xem người dùng có nhẫn trong kho hay không
+            if (!user.inventory || user.inventory.length === 0) {
+                return message.reply("Bạn cần mua một chiếc nhẫn từ `eshop` trước khi cầu hôn!");
+            }
 
-            const filter = (response) => {
-                return (
-                    response.author.id === partner.id &&
-                    ["có", "không"].includes(response.content.toLowerCase())
+            const embed = new EmbedBuilder()
+                .setColor("Pink")
+                .setTitle("💍 Lời cầu hôn")
+                .setDescription(
+                    `${message.author.username} muốn kết hôn với ${partner.username} bằng một chiếc nhẫn ${user.inventory[0]}.\n\n${partner.username}, hãy trả lời \`yes\` để chấp nhận hoặc \`no\` để từ chối.`
                 );
-            };
+
+            message.reply({ embeds: [embed] });
+
+            const filter = (response) =>
+                response.author.id === partner.id &&
+                ["yes", "no"].includes(response.content.toLowerCase());
 
             const collector = message.channel.createMessageCollector({ filter, time: 30000 });
 
             collector.on("collect", async (response) => {
-                if (response.content.toLowerCase() === "có") {
-                    proposer.isMarried = true;
-                    proposer.spouseId = partner.id;
-                    proposer.marriageDate = new Date();
+                if (response.content.toLowerCase() === "yes") {
+                    // Xóa nhẫn khỏi kho của người cầu hôn
+                    user.inventory.shift();
+                    user.marriage = partner.id;
+                    partnerData.marriage = message.author.id;
 
-                    receiver.isMarried = true;
-                    receiver.spouseId = message.author.id;
-                    receiver.marriageDate = new Date();
+                    // Lưu dữ liệu
+                    await user.save();
+                    await partnerData.save();
 
-                    await proposer.save();
-                    await receiver.save();
-
-                    message.channel.send(`💍 Chúc mừng! ${message.author} và ${partner} đã kết hôn!`);
+                    message.channel.send(
+                        `💖 Chúc mừng! ${message.author.username} và ${partner.username} đã chính thức kết hôn! 💍`
+                    );
                 } else {
-                    message.channel.send(`${partner} đã từ chối lời cầu hôn của bạn.`);
+                    message.channel.send(`${partner.username} đã từ chối lời cầu hôn. 😢`);
                 }
                 collector.stop();
             });
 
             collector.on("end", (_, reason) => {
                 if (reason === "time") {
-                    message.channel.send("⏰ Hết thời gian trả lời. Lời cầu hôn bị hủy.");
+                    message.reply(`${partner.username} không trả lời. Lời cầu hôn đã hết hạn.`);
                 }
             });
             break;
@@ -232,29 +241,41 @@ client.on("messageCreate", async (message) => {
             break;
         }
         case "epmarry": {
-    const user = await findOrCreateUser(message.author.id, message.author.username);
-    if (!user.isMarried) return message.reply("Bạn chưa kết hôn!");
+            const user = await findOrCreateUser(message.author.id, message.author.username);
 
-    const spouse = await client.users.fetch(user.spouseId);
-    const marriageEmbed = new EmbedBuilder()
-        .setColor("Pink")
-        .setTitle("💍 Thông tin hôn nhân")
-        .addFields(
-            { name: "Tên chồng/vợ", value: spouse.tag },
-            { name: "Ngày kết hôn", value: user.marriageDate.toLocaleDateString() },
-            { name: "Điểm yêu thương", value: `${user.lovePoints}` },
-        );
+            // Kiểm tra xem người dùng đã kết hôn hay chưa
+            if (!user.marriage) {
+                return message.reply("Bạn chưa kết hôn với ai cả!");
+            }
 
-    // Chỉ thêm ảnh kết hôn nếu người dùng có ảnh
-    if (user.marriageImages.length > 0) {
-        marriageEmbed.setImage(user.marriageImages[0]);
-    }
+            // Lấy thông tin đối tác
+            const partner = await findOrCreateUser(user.marriage);
+            if (!partner) {
+                return message.reply("Đối tác của bạn không tồn tại hoặc đã bị xóa.");
+            }
 
-    marriageEmbed.setFooter({ text: "Hãy giữ yêu thương trọn vẹn!" });
+            // Lấy thông tin hôn nhân
+            const marriageDate = user.marriageDate || "Không rõ ngày";
+            const lovePoints = user.lovePoints || 0;
+            const weddingRing = user.weddingRing || "Không có nhẫn";
+            const weddingImage = user.weddingImage || "Chưa thêm ảnh marry";
 
-    message.reply({ embeds: [marriageEmbed] });
-    break;
-}
+            // Embed hiển thị thông tin hôn nhân
+            const embed = new EmbedBuilder()
+                .setColor("Pink")
+                .setTitle("💍 Thông tin hôn nhân")
+                .addFields(
+                    { name: "👫 Bạn đang hạnh phúc với", value: `${partner.username}`, inline: true },
+                    { name: "📅 Ngày kết hôn", value: marriageDate, inline: true },
+                    { name: "💎 Nhẫn kết hôn", value: weddingRing, inline: true },
+                    { name: "❤️ Điểm yêu thương", value: `${lovePoints}`, inline: true },
+                    { name: "🖼️ Ảnh marry", value: weddingImage, inline: false }
+                )
+                .setFooter({ text: "Hãy yêu thương và giữ gìn hạnh phúc của mình nhé!" });
+
+            message.reply({ embeds: [embed] });
+            break;
+        }
         case "edelimage": {
             const user = await findOrCreateUser(message.author.id, message.author.username);
             if (!user.isMarried) return message.reply("Bạn chưa kết hôn!");
@@ -268,62 +289,134 @@ client.on("messageCreate", async (message) => {
             message.reply(`Ảnh kết hôn đã được xóa: ${image}`);
             break;
         }
+       case "eshop": {
+            const rings = [
+                { id: "01", name: "ENZ Peridot", price: 100000 },
+                { id: "02", name: "ENZ Citrin", price: 200000 },
+                { id: "03", name: "ENZ Topaz", price: 500000 },
+                { id: "04", name: "ENZ Spinel", price: 1000000 },
+                { id: "05", name: "ENZ Aquamarine", price: 2500000 },
+                { id: "06", name: "ENZ Emerald", price: 5000000 },
+                { id: "07", name: "ENZ Ruby", price: 10000000 },
+                { id: "999", name: "ENZ Sapphire", price: 25000000 },
+            ];
+
+            const shopEmbed = new EmbedBuilder()
+                .setColor("Red")
+                .setTitle("💍 Cửa hàng nhẫn kết hôn")
+                .setDescription(
+                    rings
+                        .map(
+                            (ring) =>
+                                `**${ring.id}**: ${ring.name} - ${ring.price.toLocaleString()} xu`
+                        )
+                        .join("\n")
+                )
+                .setFooter({ text: "Sử dụng lệnh ebuy <mã nhẫn> để mua!" });
+
+            return message.reply({ embeds: [shopEmbed] });
+        }
+
         case "ebuy": {
-            const rings = {
-                "01": { name: "ENZ Peridot", price: 100000 },
-                "02": { name: "ENZ Citrin", price: 200000 },
-                "03": { name: "ENZ Topaz", price: 500000 },
-                "04": { name: "ENZ Spinel", price: 1000000 },
-                "05": { name: "ENZ Aquamarine", price: 2500000 },
-                "06": { name: "ENZ Emerald", price: 5000000 },
-                "07": { name: "ENZ Ruby", price: 10000000 },
-                "999": { name: "ENZ Sapphire", price: 25000000 }
-            };
+            const rings = [
+                { id: "01", name: "ENZ Peridot", price: 100000 },
+                { id: "02", name: "ENZ Citrin", price: 200000 },
+                { id: "03", name: "ENZ Topaz", price: 500000 },
+                { id: "04", name: "ENZ Spinel", price: 1000000 },
+                { id: "05", name: "ENZ Aquamarine", price: 2500000 },
+                { id: "06", name: "ENZ Emerald", price: 5000000 },
+                { id: "07", name: "ENZ Ruby", price: 10000000 },
+                { id: "999", name: "ENZ Sapphire", price: 25000000 },
+            ];
 
-            const ringCode = args[0];
-            if (!rings[ringCode]) return message.reply("Mã nhẫn không hợp lệ.");
+            const ringId = args[0];
+            if (!ringId) return message.reply("Cú pháp: `ebuy <mã nhẫn>`.");
 
-            const user = await findOrCreateUser(message.author.id, message.author.username);
-            if (user.balance < rings[ringCode].price) {
-                return message.reply("Bạn không đủ xu để mua nhẫn.");
+            const ring = rings.find((r) => r.id === ringId);
+            if (!ring) return message.reply("Mã nhẫn không hợp lệ!");
+
+            const buyer = await findOrCreateUser(message.author.id, message.author.username);
+            if (buyer.balance < ring.price) {
+                return message.reply("Bạn không đủ xu để mua nhẫn này!");
             }
 
-            user.balance -= rings[ringCode].price;
-            user.ring = rings[ringCode].name;
-            await user.save();
+            buyer.balance -= ring.price;
 
-            message.reply(`Bạn đã mua nhẫn **${rings[ringCode].name}** với giá **${rings[ringCode].price} xu**.`);
+            if (!buyer.inventory) buyer.inventory = [];
+            buyer.inventory.push(ring.name);
+
+            await buyer.save();
+
+            message.reply(`💍 Bạn đã mua nhẫn **${ring.name}** thành công!`);
             break;
         }
+
+        case "einv": {
+            const user = await findOrCreateUser(message.author.id, message.author.username);
+
+            if (!user.inventory || user.inventory.length === 0) {
+                return message.reply("📦 Kho lưu trữ của bạn trống. Hãy mua nhẫn tại `eshop`!");
+            }
+
+            const inventoryEmbed = new EmbedBuilder()
+                .setColor("Pink")
+                .setTitle("📦 Kho lưu trữ nhẫn của bạn")
+                .setDescription(
+                    user.inventory.map((ring, index) => `${index + 1}. ${ring}`).join("\n")
+                )
+                .setFooter({ text: `Bạn có ${user.inventory.length} nhẫn trong kho.` });
+
+            message.reply({ embeds: [inventoryEmbed] });
+            break;
+        } 
         case "egift": {
-            if (args.length < 2) return message.reply("Cú pháp: `egift @user <mã nhẫn>`.");
+            const recipient = message.mentions.users.first();
+            const ringName = args.slice(1).join(" ");
 
-            const mentionedUser = message.mentions.users.first();
-            if (!mentionedUser) return message.reply("Hãy tag người dùng bạn muốn tặng nhẫn!");
+            if (!recipient) {
+                return message.reply("Bạn cần tag người nhận! Cú pháp: `egift @user <tên_nhẫn>`.");
+            }
 
-            const ringCode = args[1];
-            const rings = {
-                "01": { name: "ENZ Peridot", price: 100000 },
-                "02": { name: "ENZ Citrin", price: 200000 },
-                "03": { name: "ENZ Topaz", price: 500000 },
-                "04": { name: "ENZ Spinel", price: 1000000 },
-                "05": { name: "ENZ Aquamarine", price: 2500000 },
-                "06": { name: "ENZ Emerald", price: 5000000 },
-                "07": { name: "ENZ Ruby", price: 10000000 },
-                "999": { name: "ENZ Sapphire", price: 25000000 }
-            };
+            if (recipient.id === message.author.id) {
+                return message.reply("Bạn không thể tặng nhẫn cho chính mình!");
+            }
 
-            if (!rings[ringCode]) return message.reply("Mã nhẫn không hợp lệ.");
+            if (!ringName) {
+                return message.reply("Hãy nhập tên nhẫn mà bạn muốn tặng! Cú pháp: `egift @user <tên_nhẫn>`.");
+            }
 
-            const giver = await findOrCreateUser(message.author.id, message.author.username);
-            if (!giver.ring) return message.reply("Bạn chưa có nhẫn để tặng!");
+            // Lấy dữ liệu người dùng và đối tượng
+            const sender = await findOrCreateUser(message.author.id, message.author.username);
+            const receiver = await findOrCreateUser(recipient.id, recipient.username);
 
-            const receiver = await findOrCreateUser(mentionedUser.id, mentionedUser.username);
+            if (!sender.inventory || sender.inventory.length === 0) {
+                return message.reply("Bạn không có nhẫn nào trong kho để tặng! Hãy mua nhẫn tại `eshop`.");
+            }
 
-            receiver.ring = rings[ringCode].name;
+            // Kiểm tra nhẫn có trong kho hay không
+            const ringIndex = sender.inventory.findIndex((item) => item.toLowerCase() === ringName.toLowerCase());
+            if (ringIndex === -1) {
+                return message.reply("Bạn không có nhẫn này trong kho để tặng.");
+            }
+
+            // Chuyển nhẫn từ người gửi sang người nhận
+            const ring = sender.inventory[ringIndex];
+            sender.inventory.splice(ringIndex, 1); // Xóa nhẫn khỏi kho của người gửi
+            if (!receiver.inventory) receiver.inventory = [];
+            receiver.inventory.push(ring); // Thêm nhẫn vào kho của người nhận
+
+            // Lưu thay đổi
+            await sender.save();
             await receiver.save();
 
-            message.reply(`Bạn đã tặng nhẫn **${rings[ringCode].name}** cho ${mentionedUser.tag}.`);
+            const giftEmbed = new EmbedBuilder()
+                .setColor("Pink")
+                .setTitle("🎁 Quà tặng nhẫn")
+                .setDescription(
+                    `${message.author.username} đã tặng nhẫn **${ring}** cho ${recipient.username}.`
+                );
+
+            message.reply({ embeds: [giftEmbed] });
             break;
         }
         case "eaddreply": {
