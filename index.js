@@ -1,6 +1,9 @@
 const { Client, GatewayIntentBits, EmbedBuilder } = require("discord.js");
 const mongoose = require("mongoose");
 
+// Thiết lập strictQuery để tránh cảnh báo
+mongoose.set('strictQuery', true);  // Hoặc false nếu bạn muốn truy vấn không nghiêm ngặt
+
 // Kết nối MongoDB
 mongoose.connect("MONGODB_CONNECTION_STRING", {
     useNewUrlParser: true,
